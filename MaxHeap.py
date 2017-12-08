@@ -56,62 +56,83 @@ class BinHeap:
           self.percDown(i)
           i = i - 1
 
-h=BinHeap()
 
 x=range(10**5)
-a=random.sample(x,10**5)
+indexes=range(0,10**5,100)
 insertionsTimes=[]
 getMaxTimes=[]
 deleteMaxTimes=[]
 
-for e in a:
-    # measured times of insertions and the time necessary to get the max while the heap increases in size
-    insertionsTimes.append(timeit.timeit('h.insert(e)', number=1, globals=globals()))
-    getMaxTimes.append(timeit.timeit('h.heapList[1]', number=1, globals=globals()))
+#Here follow 5 cycles, in which each time a Heap is initialized and gradually built, got the max and deleted the max.
+for i in range(5):
+    h=BinHeap()
+    a=random.sample(x,10**5)
+    for e in a:
+        # measured times of insertions and the time necessary to get the max while the heap increases in size
+        insertionsTimes.append(timeit.timeit('h.insert(e)', number=1, globals=globals()))
+        getMaxTimes.append(timeit.timeit('h.heapList[1]', number=1, globals=globals()))
+    for _ in x:
+        # Now the heap gets gradually deleted by deleting the max, so that it'll be possible to whatch the time it takes depending on the size of the heap
+        deleteMaxTimes.append(timeit.timeit('h.delMax()', number=1, globals=globals()))
 
-for _ in x:
-    #Now the heap gets gradually deleted by deleting the max, so that it'll be possible to whatch the time it takes depending on the size of the heap
-    deleteMaxTimes.append(timeit.timeit('h.delMax()', number=1, globals=globals()))
+#initialized three dictionaries: their keys will be the selected indexes of reference
+#their values will be lists containing all the times that have been necessary to insert/delete the max/get the max for that specific ith element among the 5 Max Heaps
+d=dict()
+D=dict()
+gm=dict()
+
+for i in indexes:
+    d[i]=[]
+    D[i]=[]
+    gm[i]=[]
+    for e in range(5):
+        d[i].append(insertionsTimes[e*(10**5)+i])
+        D[i].append(deleteMaxTimes[e*(10**5)+i])
+        gm[i].append(getMaxTimes[e*(10**5)+i])
+
+#initialized some variables that will be used to keep track ov the maximum values in the next phase.
+m=0
+M=0
+n=0
+
+#Here below from all the lists in the dictionaries only the median is conserved
+#Chosed the median since it is a good statistical unit rarely affected by outliers (so to finally reduce noise)
+for i in indexes:
+    d[i]=sorted(d[i])
+    d[i] = d[i][2]
+    if d[i]>m: m=d[i]
+    D[i]=sorted(D[i])
+    D[i]=D[i][2]
+    if D[i]>M: M=D[i]
+    gm[i]=sorted(gm[i])
+    gm[i] = gm[i][2]
+    if gm[i] > n: n = gm[i]
 
 plt.figure(1)
-#Can be observed, in the zommed in subplot, how evident is the logarithmic growth of the necessary time to insert an element.
-plt.subplot(211)
-plt.title('Insertion of single elements in a Max Heap increasing in size')
-plt.ylabel('Time of insertion (s)')
-plt.scatter(x,insertionsTimes)
-plt.ylim((0, max(insertionsTimes)+ 0.00005))
-plt.subplot(212)
+#Can be observed how evident is the logarithmic growth of the necessary time to insert an element.
+plt.title('Insertion of single elements in a Max Heap increasing in size, each 100 elements')
 plt.ylabel('Time of insertion (s)')
 plt.xlabel('Max Heap size')
-plt.scatter(x,insertionsTimes)
-plt.ylim((0, 0.000010))
+plt.scatter(d.keys(),d.values(),s=4,c='y')
+plt.ylim((0, m+0.000004))
 
 plt.figure(2)
 #Can be observed how it's constant the time to obtain the Max in a MaxHeap.
-#This is because it is always at the root of the tree, or, also, at the first position of the array like structure of the heap.
-#Can be observed also for some cases how to get the max is actually istantaneous!
-plt.subplot(211)
+#This is because it is always at the root of the tree, or, also, at the first position of the array-like structure of the heap.
 plt.title('Get the Max in a Max Heap increasing in size')
 plt.ylabel('Time necessary to get the Max (s)')
-plt.scatter(x,getMaxTimes,s=0.8)
-plt.ylim((-0.000005,max(getMaxTimes)+0.000005))
-plt.subplot(212)
-plt.ylabel('Time necessary to get the Max (s)')
 plt.xlabel('Max Heap size')
-plt.scatter(x,getMaxTimes, s=0.8)
-plt.ylim(-0.00000015, 0.0000020)
+plt.scatter(gm.keys(),gm.values(), s=3,c='c')
+plt.ylim(0, n)
 
+x=list(D.keys())
+y=D.values()
 plt.figure(3)
 #Can be obsrved how, also here, the growth of time necessary to delete the max is logarithmic with respect to the size of the heap.
 #This similarity with the insertion is not casual, since the number of percolations necessary to find the new Max is similar to the one of percolations performed with the insertion.
-plt.subplot(211)
-plt.title('Deletion of the Max in a Max Heap increasing in size')
-plt.ylabel('Time necessary to delete the Max (s)')
-plt.scatter(x[::-1], deleteMaxTimes)
-plt.ylim(0, max(deleteMaxTimes))
-plt.subplot(212)
+plt.title('Deletion of the Max in a Max Heap increasing in size, each 100 elements')
 plt.ylabel('Time necessary to delete the Max (s)')
 plt.xlabel('Max Heap size')
-plt.scatter(x[::-1],deleteMaxTimes)
-plt.ylim(-0.00001, 0.00003)
+plt.scatter(x[::-1],y,s=4,c='g')
+plt.ylim(0, M)
 plt.show()

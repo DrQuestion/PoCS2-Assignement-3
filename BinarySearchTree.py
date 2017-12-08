@@ -8,6 +8,7 @@
 import random
 import timeit
 import matplotlib.pyplot as plt
+import statistics
 
 
 class TreeNode:
@@ -245,29 +246,41 @@ class BinarySearchTree:
 
 
 
-tree = BinarySearchTree()
+times=[]
+x = range(10 ** 5)
+indeces=range(0,10**5,100)
 
-x = range(10 ** 6)
-a = random.sample(x, 10 ** 6)
-times = []
-for e in a:
-    times.append(timeit.timeit('tree[e]=e', number=1, globals=globals()))
-    #kept track of times while building the BST
+#for 6 times a BST is initialized and inserted with a random list
+for i in range(6):
+
+    tree = BinarySearchTree()
+
+    a = random.sample(x, 10 ** 5)
+    for e in a:
+        times.append(timeit.timeit('tree[e]=e', number=1, globals=globals()))
+        #kept track of times while building the BST
+
+d=dict()
+#created a dictionary whose keys will be the sampled indexes chosed as reference, whose values, in turn, will be lists containing the corresponding time to insert the related element in the tree
+for i in indeces:
+    d[i]=[]
+    for e in range(6):
+        d[i].append(times[e*(10**5)+i])
+
+m=0
+#taken as unbiased statistical units the medians within the lists contained in the dictionary
+for i in indeces:
+    d[i]=sorted(d[i])
+    d[i] = (d[i][2]+d[i][3])/2
+    if d[i]>m: m=d[i]
 
 plt.figure(0)
-#Can be observed a logarithmic growth, as expected, in the second subplot.
-plt.subplot(211)
-plt.title('Insertion of single elements in a BST increasing in size')
-plt.ylabel('Time of insertion (s)')
-plt.scatter(x, times)
-plt.ylim((-0.0001, max(times)))
-plt.subplot(212)
-#Zoomed in where logarithmic growth is evident
+#Can be observed a logarithmic growth, as expected.
+plt.scatter(d.keys(),d.values(),s=4,c='r')
+plt.ylim(0.0000025,m)
+plt.title('Insertion of single elements in a BST increasing in size, each 100 elements')
 plt.ylabel('Time of insertion (s)')
 plt.xlabel('BST size')
-plt.scatter(x, times)
-plt.ylim((0, 0.000015))
-
 
 
 #for the following timings initialized a simpler tree to make computation faster
@@ -309,33 +322,33 @@ for e in z:
 plt.figure(1)
 #There is a direct proportionality between the time get() takes to find the key and the number of nodes of distance from the root (get() always starts from root)
 #So it's been decided to represent the relation between the time get() takes to find the node and its distance from root.
-#Can be observed linear relationship between these elements.
+#Can be observed linear relationship between the medians of these elements.
 plt.title('Get of all the elements in a given BST')
 plt.xlabel('Depth of the element in the BST')
 plt.ylabel('Time necessary to get the element (s)')
 plt.xticks(range(len(getTimes)))
 m = 0
 for k, v in getTimes.items():
-    for e in v:
-        plt.scatter(k, e)
-        if e > m:
-            m = e
+    e=statistics.median(v)
+    plt.scatter(k, e)
+    if e > m:
+        m = e
 plt.ylim(0, m + 0.00001)
 
 plt.figure(2)
 #There is direct proportionality between the time findMax() takes to find the Max and the number of nodes of distance from the starting one (which can be given as argument)
 #Represented here the relationship between the time findMax() takes to find the max from each node of the tree and its distance from it (in terms of nodes).
-#Can be observed linear relationship between these elements.
+#Can be observed linear relationship between the medians of these elements.
 plt.title('Find the Max from every node of the BST')
 plt.xlabel('Number of nodes run to find the Max')
 plt.ylabel('Time necessary to find the Max (s)')
 plt.xticks(range(len(findMaxTimes)))
 m = 0
 for k, v in findMaxTimes.items():
-    for e in v:
-        plt.scatter(k, e)
-        if e > m:
-            m = e
+    e=statistics.median(v)
+    plt.scatter(k, e)
+    if e > m:
+        m = e
 plt.ylim(0, m + 0.00001)
 
 plt.figure(3)
@@ -344,14 +357,11 @@ plt.figure(3)
 #A Leaf will require less time, since there is not any rearrangement of the tree, just needed the time to find its node (uses get()).
 #A Single Branching node will require a little rearrangement of the tree, since will be enough just to replace it with its child node.
 #A Double Branching node, instead, will require an operation to find its successor, then a structural rearrangement of the tree, so it's expected to take the most of the time.
-#Can be observed, so, three different clusters that will group the time of deletion of all the nodes of the tree, after that they have been categorized thanks to getNode().
-for e in Leaf:
-    plt.scatter(0, e)
-for e in SingleBranch:
-    plt.scatter(1, e)
-for e in DoubleBranch:
-    plt.scatter(2, e)
-plt.ylim((0, max(DoubleBranch)))
+#Can be observed, so, that the medians of the three groups reflect this growth, after that they have been categorized thanks to getNode().
+plt.scatter(0, statistics.median(Leaf))
+plt.scatter(1, statistics.median(SingleBranch))
+plt.scatter(2, statistics.median(DoubleBranch))
+plt.ylim((0, 0.000015))
 plt.title('Deletion of all the elements of a given BST')
 plt.xlabel('Kind of Branching')
 plt.ylabel('Time necessary to Delete the element (s)')
